@@ -1,6 +1,11 @@
-import { IErr, IOk, IResult } from "./interfaces";
+import { IResult } from "../interfaces.js";
 import { isDeepStrictEqual } from "node:util";
 import { ResultAsync } from "./resultAsync.js";
+
+enum ResultType {
+	Ok,
+	Err,
+}
 
 /**
  * `Result<T, E>` is the type used for returning and propagating errors. It is
@@ -17,19 +22,20 @@ import { ResultAsync } from "./resultAsync.js";
 class Result<T, E> implements IResult<T, E> {
 	ok!: T;
 	err!: E;
+	#type: ResultType;
 
 	/**
 	 * Creates an instance of Result.
 	 * @param {({"ok": T} | {"err": E})} data
 	 * @memberof Result
 	 */
-	constructor(data: IOk<T> | IErr<E>) {
-		if ("ok" in data) {
-			this.ok = data.ok;
-		} else if ("err" in data) {
-			this.err = data.err;
+	constructor(data: T | E, type: ResultType) {
+		if (type === ResultType.Ok) {
+			this.ok = data as T;
+			this.#type = ResultType.Ok;
 		} else {
-			throw Error("Bad constructor format!");
+			this.err = data as E;
+			this.#type = ResultType.Err;
 		}
 	}
 
@@ -47,12 +53,10 @@ class Result<T, E> implements IResult<T, E> {
 	 * @memberof Result
 	 */
 	isOk(): boolean {
-		if ("ok" in this) {
+		if (this.#type === ResultType.Ok) {
 			return true;
-		} else if ("err" in this) {
-			return false;
 		} else {
-			throw Error("Something is deeply wrong with the Result object");
+			return false;
 		}
 	}
 
@@ -75,7 +79,7 @@ class Result<T, E> implements IResult<T, E> {
 	 */
 	isOkAnd(f: (x: T) => boolean): boolean {
 		if (this.isOk()) {
-			return f(this.unwrap());
+			return f(this.ok);
 		} else if ("err" in this) {
 			return false;
 		} else {
@@ -97,12 +101,10 @@ class Result<T, E> implements IResult<T, E> {
 	 * @memberof Result
 	 */
 	isErr(): boolean {
-		if ("err" in this) {
+		if (this.#type === ResultType.Err) {
 			return true;
-		} else if ("ok" in this) {
-			return false;
 		} else {
-			throw Error("Something is deeply wrong with the Result object");
+			return false;
 		}
 	}
 
@@ -127,7 +129,7 @@ class Result<T, E> implements IResult<T, E> {
 		if (this.isOk()) {
 			return false;
 		} else if (this.isErr()) {
-			return f(this.unwrapErr());
+			return f(this.err);
 		} else {
 			throw Error("Something is deeply wrong with the Result object");
 		}
@@ -173,9 +175,9 @@ class Result<T, E> implements IResult<T, E> {
 	 */
 	map<U>(op: (value: T) => U): Result<U, E> {
 		if (this.isOk()) {
-			return Ok<U, E>(op(this.unwrap()));
+			return Ok<U, E>(op(this.ok));
 		} else if (this.isErr()) {
-			return Err<U, E>(this.unwrapErr());
+			return Err<U, E>(this.err);
 		} else {
 			throw Error("Something is deeply wrong with the Result object");
 		}
@@ -200,7 +202,7 @@ class Result<T, E> implements IResult<T, E> {
 	 */
 	mapOr<U>(alternative: U, f: (value: T) => U): U {
 		if (this.isOk()) {
-			return f(this.unwrap());
+			return f(this.ok);
 		} else if (this.isErr()) {
 			return alternative;
 		} else {
@@ -242,9 +244,9 @@ class Result<T, E> implements IResult<T, E> {
 	 */
 	mapOrElse<U>(altF: (err: E) => U, f: (value: T) => U): U {
 		if (this.isOk()) {
-			return f(this.unwrap());
+			return f(this.ok);
 		} else if (this.isErr()) {
-			return altF(this.unwrapErr());
+			return altF(this.err);
 		} else {
 			throw Error("Something is deeply wrong with the Result object");
 		}
@@ -256,14 +258,14 @@ class Result<T, E> implements IResult<T, E> {
 	 *
 	 * This function can be used to pass through a successful result while
 	 * handling an error.
-	 * 
+	 *
 	 * ---
 	 * @example
 	 * const stringify = (x: number): string => `error code is: ${x}`;
 
 	 * const result: Result<number, number> = Ok(2);
 	 * result.mapErr(stringify); // Ok(2)
-	 * 
+	 *
 	 * const result: Result<number, number> = Err(13);
 	 * result.mapErr(stringify); // Err("error code is: 13")
 	 * @template F
@@ -273,9 +275,9 @@ class Result<T, E> implements IResult<T, E> {
 	 */
 	mapErr<F>(op: (err: E) => F): Result<T, F> {
 		if (this.isOk()) {
-			return Ok(this.unwrap());
+			return Ok(this.ok);
 		} else if (this.isErr()) {
-			return Err(op(this.unwrapErr()));
+			return Err(op(this.err));
 		} else {
 			throw Error("Something is deeply wrong with the Result object");
 		}
@@ -316,9 +318,9 @@ class Result<T, E> implements IResult<T, E> {
 	 */
 	expect(msg: string): T {
 		if (this.isOk()) {
-			return this.unwrap();
+			return this.ok;
 		} else if (this.isErr()) {
-			throw Error(msg + ": " + JSON.stringify(this.unwrapErr()));
+			throw Error(msg + ": " + JSON.stringify(this.err));
 		} else {
 			throw Error("Something is deeply wrong with the Result object");
 		}
@@ -344,10 +346,10 @@ class Result<T, E> implements IResult<T, E> {
 	 * @memberof Result
 	 */
 	unwrap(): T {
-		if (this && this.isOk()) {
+		if (this.isOk()) {
 			return this.ok;
 		} else {
-			throw Error("Called Result.unwrap() on an Err value: " + JSON.stringify(this.unwrapErr()));
+			throw Error("Called Result.unwrap() on an Err value: " + JSON.stringify(this.err));
 		}
 	}
 
@@ -371,11 +373,9 @@ class Result<T, E> implements IResult<T, E> {
 	 */
 	expectErr(msg: string): E {
 		if (this.isErr()) {
-			return this.unwrapErr();
-		} else if (this.isOk()) {
-			throw Error(msg + ": " + JSON.stringify(this.unwrap()));
+			return this.err;
 		} else {
-			throw Error("Something is deeply wrong with the Result object");
+			throw Error(msg + ": " + JSON.stringify(this.ok));
 		}
 	}
 
@@ -395,10 +395,10 @@ class Result<T, E> implements IResult<T, E> {
 	 * @memberof Result
 	 */
 	unwrapErr(): E {
-		if (this && this.isErr()) {
+		if (this.isErr()) {
 			return this.err;
 		} else {
-			throw Error("Called Result.unwrapErr() on an Ok value: " + JSON.stringify(this.unwrap()));
+			throw Error("Called Result.unwrapErr() on an Ok value: " + JSON.stringify(this.ok));
 		}
 	}
 
@@ -464,9 +464,9 @@ class Result<T, E> implements IResult<T, E> {
 	 */
 	andThen<U>(op: (value: T) => Result<U, E>): Result<U, E> {
 		if (this.isOk()) {
-			return op(this.unwrap());
+			return op(this.ok);
 		} else {
-			return Err(this.unwrapErr());
+			return Err(this.err);
 		}
 	}
 
@@ -499,10 +499,8 @@ class Result<T, E> implements IResult<T, E> {
 	or(res: Result<T, E>): Result<T, E> {
 		if (this.isErr()) {
 			return res;
-		} else if (this.isOk()) {
-			return this;
 		} else {
-			throw Error("Something is deeply wrong with the Result object");
+			return this;
 		}
 	}
 
@@ -529,11 +527,9 @@ class Result<T, E> implements IResult<T, E> {
 	 */
 	orElse<F>(op: (err: E) => Result<T, F>): Result<T, F> {
 		if (this.isOk()) {
-			return Ok(this.unwrap());
-		} else if (this.isErr()) {
-			return op(this.unwrapErr());
+			return Ok(this.ok);
 		} else {
-			throw Error("Something is deeply wrong with the Result object");
+			return op(this.err);
 		}
 	}
 
@@ -555,11 +551,9 @@ class Result<T, E> implements IResult<T, E> {
 	 */
 	unwrapOr(alternative: T): T {
 		if (this.isOk()) {
-			return this.unwrap();
-		} else if (this.isErr()) {
-			return alternative;
+			return this.ok;
 		} else {
-			throw Error("Something is deeply wrong with the Result object");
+			return alternative;
 		}
 	}
 
@@ -582,11 +576,9 @@ class Result<T, E> implements IResult<T, E> {
 	 */
 	unwrapOrElse(op: (err: E) => T): T {
 		if (this.isOk()) {
-			return this.unwrap();
-		} else if (this.isErr()) {
-			return op(this.unwrapErr());
+			return this.ok;
 		} else {
-			throw Error("Something is deeply wrong with the Result object");
+			return op(this.err);
 		}
 	}
 
@@ -614,11 +606,9 @@ class Result<T, E> implements IResult<T, E> {
 	 */
 	contains<U extends T>(x: U): boolean {
 		if (this.isOk()) {
-			return isDeepStrictEqual(this.unwrap(), x);
-		} else if (this.isErr()) {
-			return false;
+			return isDeepStrictEqual(this.ok, x);
 		} else {
-			throw Error("Something is deeply wrong with the Result object");
+			return false;
 		}
 	}
 
@@ -646,11 +636,9 @@ class Result<T, E> implements IResult<T, E> {
 	 */
 	containsErr<F extends E>(x: F): boolean {
 		if (this.isErr()) {
-			return isDeepStrictEqual(this.unwrapErr(), x);
-		} else if (this.isOk()) {
-			return false;
+			return isDeepStrictEqual(this.err, x);
 		} else {
-			throw Error("Something is deeply wrong with the Result object");
+			return false;
 		}
 	}
 
@@ -783,8 +771,7 @@ class Result<T, E> implements IResult<T, E> {
  * @returns {Result<T, E>} Result<T, E>
  */
 const Ok = <T, E>(data: T): Result<T, E> => {
-	const okType: IOk<T> = { ok: data };
-	return new Result(okType);
+	return new Result<T, E>(data, ResultType.Ok);
 };
 
 /**
@@ -816,8 +803,7 @@ const Ok = <T, E>(data: T): Result<T, E> => {
  * @returns {*}  {Result<T, E>}
  */
 const Err = <T, E>(err: E): Result<T, E> => {
-	const errObj: IErr<E> = { err: err };
-	return new Result(errObj);
+	return new Result<T, E>(err, ResultType.Err);
 };
 
 export { Result, Ok, Err };
