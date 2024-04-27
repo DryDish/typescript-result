@@ -128,13 +128,13 @@ describe("Result.fromPromise() tests", () => {
 
 describe("Result.fromPromiseUnknown() tests", () => {
 	// -----------------UTILITY FUNCTIONS---------------------
-	const testPromiseResolve = new Promise((resolve) => resolve(123));
-	const testPromiseReject = new Promise((_, reject) => reject(123));
+	const testPromiseResolve = () => new Promise((resolve) => resolve(123));
+	const testPromiseReject = () => new Promise((_, reject) => reject(123));
 	// ---------------UTILITY FUNCTIONS END-------------------
 
 	test("Result.fromPromiseUnknown() resolve typed", async () => {
 		// Type: Result<number, unknown>
-		const result: Result<number, unknown> = await Result.fromPromiseUnknown(testPromiseResolve);
+		const result: Result<number, unknown> = await Result.fromPromiseUnknown(testPromiseResolve());
 
 		expect(result.isOk()).toBe(true);
 		expect(result.unwrap()).toBe(123);
@@ -142,7 +142,7 @@ describe("Result.fromPromiseUnknown() tests", () => {
 
 	test("Result.fromPromiseUnknown() reject typed", async () => {
 		// Type: Result<number, unknown>
-		const result = await Result.fromPromiseUnknown<number>(testPromiseReject);
+		const result = await Result.fromPromiseUnknown<number>(testPromiseReject());
 
 		expect(result.isErr()).toBe(true);
 		expect(result.unwrapErr()).toBe(123);
@@ -150,7 +150,7 @@ describe("Result.fromPromiseUnknown() tests", () => {
 
 	test("Result.fromPromiseUnknown() accept untyped", async () => {
 		// Type: Result<unknown, unknown>
-		const result = await Result.fromPromiseUnknown(testPromiseResolve);
+		const result = await Result.fromPromiseUnknown(testPromiseResolve());
 
 		expect(result.isOk()).toBe(true);
 		expect(result.unwrap()).toBe(123);
@@ -158,7 +158,7 @@ describe("Result.fromPromiseUnknown() tests", () => {
 
 	test("Result.fromPromiseUnknown() reject untyped", async () => {
 		// Type: Result<Unknown, unknown>
-		const result = await Result.fromPromiseUnknown(testPromiseResolve);
+		const result = await Result.fromPromiseUnknown(testPromiseResolve());
 
 		expect(result.isOk()).toBe(true);
 		expect(result.unwrap()).toBe(123);
