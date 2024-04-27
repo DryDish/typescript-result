@@ -1,5 +1,5 @@
-import { Err, Ok, Result } from "../src/result";
-import { ErrAsync, OkAsync } from "../src/resultAsync";
+import { Err, Ok, Result } from "../src/result/result";
+import { ErrAsync, OkAsync } from "../src/result/resultAsync";
 
 async function getNumberDelayedResolve(number: number, msWait: number) {
 	return new Promise<number>((res) => {
