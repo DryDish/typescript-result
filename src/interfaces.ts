@@ -1,11 +1,3 @@
-interface IOk<T> {
-	ok: T;
-}
-
-interface IErr<E> {
-	err: E;
-}
-
 interface IResult<T, E> {
 	isOk(): boolean;
 	isOkAnd(f: (x: T) => boolean): boolean;
@@ -29,5 +21,4 @@ interface IResult<T, E> {
 	containsErr<F extends E>(x: F): boolean;
 }
 
-
-export { IOk, IErr, IResult };
+export { IResult };
