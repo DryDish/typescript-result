@@ -71,12 +71,11 @@ class ResultAsync<T extends Result<T["ok"], T["err"]>> extends Promise<T> {
 	map<U>(func: (data: T["ok"]) => Promise<U> | U): ResultAsync<Result<U, T["err"]>> {
 		return new ResultAsync<Result<U, unknown>>((resolve) => {
 			this.then((resultData) => {
-				if (!resultData.isOk()) {
-					resolve(Err(resultData.unwrapErr()));
+				if (resultData.isErr()) {
+					resolve(Err(resultData.err));
 				}
-
 				try {
-					const response = func(resultData.unwrap() as T["ok"]);
+					const response = func(resultData.ok as T["ok"]);
 					if (response instanceof Promise) {
 						response
 							.then((data) => {
@@ -138,11 +137,10 @@ class ResultAsync<T extends Result<T["ok"], T["err"]>> extends Promise<T> {
 			this.then((resultData) => {
 				const result = resultData as Result<T["ok"], F>;
 				if (!result.isErr()) {
-					resolve(Ok(result.unwrap()));
+					resolve(Ok(result.ok));
 				}
-
 				try {
-					const error = op(result.unwrapErr());
+					const error = op(result.err);
 					if (error instanceof Promise) {
 						error
 							.then((data) => {
@@ -210,14 +208,14 @@ class ResultAsync<T extends Result<T["ok"], T["err"]>> extends Promise<T> {
 			this.then((resultData) => {
 				const result = resultData;
 				if (result.isOk()) {
-					const data = result.unwrap();
+					const data = result.ok;
 					if (data instanceof Promise) {
 						data.then((data) => resolve(op(data))).catch((err) => resolve(Err(err)));
 					} else {
 						resolve(op(data));
 					}
 				} else {
-					resolve(Err(result.unwrapErr() as E));
+					resolve(Err(result.err as E));
 				}
 			});
 		});
