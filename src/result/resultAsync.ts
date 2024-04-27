@@ -72,7 +72,7 @@ class ResultAsync<T extends Result<T["ok"], T["err"]>> extends Promise<T> {
 		return new ResultAsync<Result<U, unknown>>((resolve) => {
 			this.then((resultData) => {
 				if (resultData.isErr()) {
-					resolve(Err(resultData.err));
+					return resolve(Err(resultData.err));
 				}
 				try {
 					const response = func(resultData.ok as T["ok"]);
