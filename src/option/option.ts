@@ -254,3 +254,5 @@ const Some = <T>(value: T): Option<T> => {
 const None = <T>(): Option<T> => {
 	return new Option(undefined as T, OptionType.None);
 };
+
+export { Option, Some, None };
