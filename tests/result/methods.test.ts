@@ -1,4 +1,4 @@
-import { Result, Ok, Err } from "../src/result/result";
+import { Result, Ok, Err } from "../../src/result/result";
 
 interface ErrorMessage<E, T> {
 	error: E;
