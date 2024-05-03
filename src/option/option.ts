@@ -1,4 +1,5 @@
-import { Err, Ok, type Result } from "result/result";
+import { Err, Ok } from "../result/result";
+import type { Result } from "../result/result";
 
 enum OptionType {
 	Some,
@@ -68,11 +69,11 @@ class Option<T> {
 		}
 	}
 
-	unwrapOrElse(func: () => T): T {
+	unwrapOrElse(callback: () => T): T {
 		if (this.isSome()) {
 			return this._value;
 		} else {
-			return func();
+			return callback();
 		}
 	}
 
@@ -84,28 +85,28 @@ class Option<T> {
 		}
 	}
 
-	inspect(inspectFn: (value: T) => void): Option<T> {
+	inspect(callback: (value: T) => void): Option<T> {
 		if (this.isSome()) {
-			// Cloning the value to prevent mutation of the original in inspectFn
+			// Cloning the value to prevent mutation of the original in callback
 			const clonedValue = structuredClone(this._value);
-			inspectFn(structuredClone(clonedValue));
+			callback(clonedValue);
 		}
 		return this;
 	}
 
-	mapOr<U>(defaultValue: U, mapper: (value: T) => U): U {
+	mapOr<U>(defaultValue: U, executor: (value: T) => U): U {
 		if (this.isSome()) {
-			return mapper(this._value);
+			return executor(this._value);
 		} else {
 			return defaultValue;
 		}
 	}
 
-	mapOrElse<U>(defaultFn: () => U, mapper: (value: T) => U): U {
+	mapOrElse<U>(defaultCallback: () => U, executor: (value: T) => U): U {
 		if (this.isSome()) {
-			return mapper(this._value);
+			return executor(this._value);
 		} else {
-			return defaultFn();
+			return defaultCallback();
 		}
 	}
 
@@ -117,11 +118,11 @@ class Option<T> {
 		}
 	}
 
-	okOrElse<E>(errFn: () => E): Result<T, E> {
+	okOrElse<E>(errorCallback: () => E): Result<T, E> {
 		if (this.isSome()) {
 			return Ok(this._value);
 		} else {
-			return Err(errFn());
+			return Err(errorCallback());
 		}
 	}
 
@@ -133,9 +134,9 @@ class Option<T> {
 		}
 	}
 
-	andThen<U>(func: (value: T) => Option<U>): Option<U> {
+	andThen<U>(optionCallback: (value: T) => Option<U>): Option<U> {
 		if (this.isSome()) {
-			return func(this._value);
+			return optionCallback(this._value);
 		} else {
 			return None();
 		}
@@ -157,16 +158,17 @@ class Option<T> {
 		}
 	}
 
-	orElse(altFunction: () => Option<T>): Option<T> {
+	orElse(callback: () => Option<T>): Option<T> {
 		if (this.isSome()) {
 			return this;
 		} else {
-			return altFunction();
+			return callback();
 		}
 	}
 
 	insert(value: T): Option<T> {
 		this._value = value;
+		this.#type = OptionType.Some;
 		return this;
 	}
 
@@ -180,11 +182,11 @@ class Option<T> {
 		}
 	}
 
-	getOrInsertWith(altFunction: () => T): T {
+	getOrInsertWith(callback: () => T): T {
 		if (this.isSome()) {
 			return this._value;
 		} else {
-			this._value = altFunction();
+			this._value = callback();
 			this.#type = OptionType.Some;
 			return this._value;
 		}
@@ -197,7 +199,7 @@ class Option<T> {
 			this.#type = OptionType.None;
 			return Some(oldValue);
 		} else {
-			return None();
+			return this;
 		}
 	}
 
@@ -205,7 +207,7 @@ class Option<T> {
 		if (this.isSome() && predicate(this._value)) {
 			return this.take();
 		} else {
-			return None();
+			return this;
 		}
 	}
 
