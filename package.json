@@ -17,7 +17,8 @@
 		"start": "ts-node -O '{\"module\": \"commonjs\"}' main.ts",
 		"start-js": "nodemon main.js",
 		"build": "rm -fr lib/* && tsc -p tsconfig.json && tsc -p tsconfig-cjs.json && ./fixup.sh",
-		"test": "jest"
+		"test": "jest",
+		"test:watch": "jest --watch"
 	},
 	"repository": {
 		"type": "git",
