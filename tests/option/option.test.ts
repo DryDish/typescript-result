@@ -1,4 +1,5 @@
 import { Some, None, Option } from "../../src/option/option";
+import { Ok, Err } from "../../src/result/result";
 
 describe("Option method tests", () => {
 	describe("Option.isSome()", () => {
@@ -112,12 +113,39 @@ describe("Option method tests", () => {
 		});
 	});
 
+	const three = (): number => 3;
+
 	describe("Option.mapOr()", () => {
 		test("Some(2).mapOr(3, (x) => x * 2) should return 4", () => {
 			expect(Some(2).mapOr(3, (x) => x * 2)).toBe(4);
 		});
 		test("None().mapOr(3, (x) => x * 2) should return 3", () => {
 			expect(None<number>().mapOr(3, (x) => x * 2)).toBe(3);
+		});
+	});
+
+	describe("Option.mapOrElse()", () => {
+		test("Some(2).mapOrElse(() => 3, (x) => x * 2) should return 4", () => {
+			expect(Some(2).mapOrElse(three, (x) => x * 2)).toBe(4);
+		});
+		test("None().mapOrElse(() => 3, (x) => x * 2) should return 3", () => {
+			expect(None<number>().mapOrElse(three, (x) => x * 2)).toBe(3);
+		});
+	});
+
+	describe("Option.okOr()", () => {
+		test("Some(2).okOr(-1) should return Some(2)", () => {
+			expect(Some(2).okOr(-1)).toEqual(Ok(2));
+		});
+
+		test("None().okOr(-1) should return Some(-1)", () => {
+			expect(None<number>().okOr(-1)).toEqual(Err(-1));
+		});
+		test("None().okOr({ error: 400, message: 'Bad Request' }) should return Err", () => {
+			const error = { error: 400, message: "Bad Request" };
+			const result = None<number>().okOr(error);
+
+			expect(result).toEqual(Err({ error: 400, message: "Bad Request" }));
 		});
 	});
 });
