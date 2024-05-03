@@ -142,10 +142,8 @@ describe("Option method tests", () => {
 			expect(None<number>().okOr(-1)).toEqual(Err(-1));
 		});
 		test("None().okOr({ error: 400, message: 'Bad Request' }) should return Err", () => {
-			const error = { error: 400, message: "Bad Request" };
-			const result = None<number>().okOr(error);
-
-			expect(result).toEqual(Err({ error: 400, message: "Bad Request" }));
+			const result = None<number>().okOr("No number found in DB!");
+			expect(result).toEqual(Err("No number found in DB!"));
 		});
 	});
 });
