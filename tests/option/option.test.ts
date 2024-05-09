@@ -113,7 +113,6 @@ describe("Option method tests", () => {
 		});
 	});
 
-	const three = (): number => 3;
 
 	describe("Option.mapOr()", () => {
 		test("Some(2).mapOr(3, (x) => x * 2) should return 4", () => {
@@ -125,6 +124,8 @@ describe("Option method tests", () => {
 	});
 
 	describe("Option.mapOrElse()", () => {
+		const three = (): number => 3;
+
 		test("Some(2).mapOrElse(() => 3, (x) => x * 2) should return 4", () => {
 			expect(Some(2).mapOrElse(three, (x) => x * 2)).toBe(4);
 		});
@@ -137,13 +138,55 @@ describe("Option method tests", () => {
 		test("Some(2).okOr(-1) should return Some(2)", () => {
 			expect(Some(2).okOr(-1)).toEqual(Ok(2));
 		});
-
-		test("None().okOr(-1) should return Some(-1)", () => {
+		test("None().okOr(-1) should return Err(-1)", () => {
 			expect(None<number>().okOr(-1)).toEqual(Err(-1));
 		});
-		test("None().okOr({ error: 400, message: 'Bad Request' }) should return Err", () => {
-			const result = None<number>().okOr("No number found in DB!");
-			expect(result).toEqual(Err("No number found in DB!"));
+		test("None().okOr('No number found!') should return Err('No number found!')", () => {
+			const result = None<number>().okOr("No number found!");
+			expect(result).toEqual(Err("No number found!"));
+		});
+	});
+
+	describe("Option.okOrElse()", () => {
+		test("Some(2).okOrElse(() => -1) should return Some(2)", () => {
+			expect(Some(2).okOrElse(() => -1)).toEqual(Ok(2));
+		});
+		test("None().okOrElse(() => -1) should return Err(-1)", () => {
+			expect(None<number>().okOrElse(() => -1)).toEqual(Err(-1));
+		});
+		test("None().okOrElse(() => 'No number found!') should return Err('No number found!')", () => {
+			const result = None<number>().okOrElse(() => "No number found!");
+			expect(result).toEqual(Err("No number found!"));
+		});
+	});
+
+	describe("Option.and()", () => {
+		test("Some(2).and(Some(3)) should return Some(3)", () => {
+			expect(Some(2).and(Some(3))).toEqual(Some(3));
+		});
+		test("Some(2).and(None()) should return None()", () => {
+			expect(Some(2).and(None())).toEqual(None());
+		});
+		test("None().and(Some(3)) should return None()", () => {
+			expect(None<number>().and(Some(3))).toEqual(None());
+		});
+		test("None().and(None()) should return None()", () => {
+			expect(None<number>().and(None())).toEqual(None());
+		});
+	});
+
+	describe("Option.andThen()", () => {
+		test("Some(2).andThen((x) => Some(x * 2)) should return Some(4)", () => {
+			expect(Some(2).andThen((x) => Some(x * 2))).toEqual(Some(4));
+		});
+		test("Some(2).andThen((x) => None()) should return None()", () => {
+			expect(Some(2).andThen((_) => None())).toEqual(None());
+		});
+		test("None().andThen((x) => Some(x * 2)) should return None()", () => {
+			expect(None<number>().andThen((x) => Some(x * 2))).toEqual(None());
+		});
+		test("None().andThen((x) => None()) should return None()", () => {
+			expect(None<number>().andThen((_) => None())).toEqual(None());
 		});
 	});
 });
