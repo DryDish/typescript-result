@@ -166,10 +166,10 @@ class Option<T> {
 		}
 	}
 
-	insert(value: T): Option<T> {
+	insert(value: T): T {
 		this._value = value;
 		this.#type = OptionType.Some;
-		return this;
+		return this._value;
 	}
 
 	getOrInsert(altValue: T): T {
@@ -207,15 +207,15 @@ class Option<T> {
 		if (this.isSome() && predicate(this._value)) {
 			return this.take();
 		} else {
-			return this;
+			return None();
 		}
 	}
 
 	replace(value: T): Option<T> {
 		if (this.isSome()) {
-			const oldOption = structuredClone(this);
+			const oldValue = structuredClone(this._value);
 			this._value = value;
-			return oldOption;
+			return Some(oldValue);
 		} else {
 			this._value = value;
 			this.#type = OptionType.Some;
